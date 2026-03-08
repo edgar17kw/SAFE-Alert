@@ -1,0 +1,1029 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Mar  6 20:00:07 2026
+
+@author: Edinelson Villanueva Soto
+"""
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAFE Alert</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+  /* ─── Design System ─────────────────────────────────────────── */
+  :root {
+    --bg-deep:    #050a0f;
+    --bg-panel:   #0a1520;
+    --bg-card:    #0f1e2e;
+    --border:     #1a3a55;
+    --text-dim:   #4a7a9b;
+    --text-main:  #c8dde8;
+    --text-bright:#e8f4ff;
+    --accent:     #00aaff;
+
+    --fire:   #ff3a1a;
+    --gas:    #ffe520;
+    --quake:  #f0f0f0;
+    --tsunami:#0077ff;
+    --shooter:#9b1aff;
+
+    --solar-green: #39ff5a;
+    --bat-green:   #29dd4a;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,170,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,170,255,.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── Layout ─────────────────────────────────────────────────── */
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+  }
+
+  /* ─── Header ─────────────────────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 18px;
+    margin-bottom: 28px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .logo-block { display: flex; align-items: center; gap: 14px; }
+  .logo-icon {
+    width: 54px; height: 54px;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-size: 26px;
+    background: rgba(0,170,255,.08);
+    box-shadow: 0 0 18px rgba(0,170,255,.25);
+    flex-shrink: 0;
+  }
+  .logo-text h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    color: var(--text-bright);
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  .logo-text p {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .65rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .header-status {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .72rem;
+    color: var(--solar-green);
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--solar-green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { box-shadow: 0 0 0 0 rgba(57,255,90,.6); }
+    50%      { box-shadow: 0 0 0 5px rgba(57,255,90,0); }
+  }
+
+  /* ─── Two-column grid ─────────────────────────────────────────── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 22px;
+  }
+  @media(max-width: 820px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ─── Card shell ─────────────────────────────────────────────── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .65rem;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 16px; height: 2px;
+    background: var(--accent);
+  }
+
+  /* ─── Alert indicator ────────────────────────────────────────── */
+  .alert-display {
+    height: 180px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 2px solid var(--border);
+    background: rgba(0,0,0,.35);
+    transition: all .4s cubic-bezier(.4,0,.2,1);
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .alert-display::after {
+    content: '';
+    position: absolute; inset: 0;
+    opacity: 0;
+    transition: opacity .4s;
+    pointer-events: none;
+  }
+  .alert-display.active::after {
+    opacity: 1;
+    animation: strobe .6s steps(1) infinite;
+  }
+
+  @keyframes strobe {
+    0%   { background: rgba(255,255,255,.08); }
+    50%  { background: transparent; }
+    100% { background: rgba(255,255,255,.08); }
+  }
+
+  .alert-icon {
+    font-size: 3.5rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 12px currentColor);
+    transition: all .4s;
+  }
+  .alert-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.6rem;
+    letter-spacing: 4px;
+    color: var(--text-bright);
+    text-transform: uppercase;
+    transition: all .4s;
+  }
+  .alert-sublabel {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .7rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  /* colour states */
+  .alert-display.state-fire    { border-color: var(--fire);    box-shadow: 0 0 40px rgba(255,58,26,.35);  }
+  .alert-display.state-gas     { border-color: var(--gas);     box-shadow: 0 0 40px rgba(255,229,32,.30); }
+  .alert-display.state-quake   { border-color: var(--quake);   box-shadow: 0 0 40px rgba(240,240,240,.25);}
+  .alert-display.state-tsunami { border-color: var(--tsunami); box-shadow: 0 0 40px rgba(0,119,255,.35); }
+  .alert-display.state-shooter { border-color: var(--shooter); box-shadow: 0 0 40px rgba(155,26,255,.4); }
+
+  /* label glow colours */
+  .state-fire    .alert-icon { color: var(--fire);    }
+  .state-gas     .alert-icon { color: var(--gas);     }
+  .state-quake   .alert-icon { color: var(--quake);   }
+  .state-tsunami .alert-icon { color: var(--tsunami); }
+  .state-shooter .alert-icon { color: var(--shooter); }
+
+  .alert-display.active .alert-label { animation: label-flicker .8s ease-in-out infinite alternate; }
+  @keyframes label-flicker {
+    from { opacity: 1; }
+    to   { opacity: .65; }
+  }
+
+  /* colour band at bottom */
+  .alert-band {
+    height: 5px;
+    border-radius: 0 0 10px 10px;
+    margin-top: -5px;
+    transition: background .4s;
+  }
+  .alert-band.b-fire    { background: var(--fire);    box-shadow: 0 0 10px var(--fire); }
+  .alert-band.b-gas     { background: var(--gas);     box-shadow: 0 0 10px var(--gas); }
+  .alert-band.b-quake   { background: var(--quake);   box-shadow: 0 0 10px var(--quake); }
+  .alert-band.b-tsunami { background: var(--tsunami); box-shadow: 0 0 10px var(--tsunami); }
+  .alert-band.b-shooter { background: var(--shooter); box-shadow: 0 0 10px var(--shooter); }
+  .alert-band.b-idle    { background: var(--border); }
+
+  /* ─── Emergency buttons ──────────────────────────────────────── */
+  .btn-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .btn-grid .btn-emergency:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .btn-emergency {
+    padding: 18px 12px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background: rgba(255,255,255,.03);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 2px;
+    color: var(--text-main);
+    transition: all .22s cubic-bezier(.4,0,.2,1);
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-emergency:hover {
+    transform: translateY(-3px);
+    background: rgba(255,255,255,.07);
+  }
+  .btn-emergency:active { transform: scale(.96); }
+  .btn-emergency .btn-icon { font-size: 2rem; }
+  .btn-emergency .btn-color-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .6rem;
+    letter-spacing: 1.5px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    opacity: .8;
+  }
+
+  .btn-fire    { border-color: var(--fire);    }
+  .btn-gas     { border-color: var(--gas);     }
+  .btn-quake   { border-color: var(--quake);   }
+  .btn-tsunami { border-color: var(--tsunami); }
+  .btn-shooter { border-color: var(--shooter); }
+
+  .btn-fire:hover    { box-shadow: 0 6px 24px rgba(255,58,26,.35);  }
+  .btn-gas:hover     { box-shadow: 0 6px 24px rgba(255,229,32,.30); }
+  .btn-quake:hover   { box-shadow: 0 6px 24px rgba(240,240,240,.2); }
+  .btn-tsunami:hover { box-shadow: 0 6px 24px rgba(0,119,255,.35);  }
+  .btn-shooter:hover { box-shadow: 0 6px 24px rgba(155,26,255,.4);  }
+
+  .btn-fire    .btn-color-tag { background: rgba(255,58,26,.2);   color: var(--fire);    }
+  .btn-gas     .btn-color-tag { background: rgba(255,229,32,.15); color: var(--gas);     }
+  .btn-quake   .btn-color-tag { background: rgba(240,240,240,.1); color: var(--quake);   }
+  .btn-tsunami .btn-color-tag { background: rgba(0,119,255,.2);   color: var(--tsunami); }
+  .btn-shooter .btn-color-tag { background: rgba(155,26,255,.2);  color: var(--shooter); }
+
+  .btn-emergency.active-btn {
+    transform: scale(.97);
+    opacity: .9;
+  }
+
+  /* ripple */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    animation: ripple-anim .5s linear;
+    background: rgba(255,255,255,.18);
+    pointer-events: none;
+  }
+  @keyframes ripple-anim {
+    to { transform: scale(4); opacity: 0; }
+  }
+
+  /* ─── Reset button ───────────────────────────────────────────── */
+  .btn-reset {
+    width: 100%;
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: rgba(255,255,255,.03);
+    color: var(--text-dim);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-reset:hover {
+    border-color: #ff6060;
+    color: #ff6060;
+    background: rgba(255,60,60,.06);
+    box-shadow: 0 0 16px rgba(255,60,60,.2);
+  }
+
+  /* ─── Right sidebar ───────────────────────────────────────────── */
+  .sidebar { display: flex; flex-direction: column; gap: 18px; }
+
+  /* Energy card */
+  .energy-card {}
+
+  .solar-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .solar-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .72rem;
+    color: var(--solar-green);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .solar-icon { font-size: 1.2rem; }
+  .solar-val {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .7rem;
+    color: var(--text-dim);
+  }
+
+  /* battery */
+  .battery-wrap {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 12px;
+  }
+  .battery-body {
+    flex: 1;
+    height: 26px;
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    position: relative;
+    overflow: hidden;
+  }
+  .battery-body::after { /* terminal nub */
+    content: '';
+    position: absolute; right: -8px; top: 50%;
+    transform: translateY(-50%);
+    width: 6px; height: 12px;
+    background: var(--border);
+    border-radius: 0 3px 3px 0;
+  }
+  .battery-fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 82%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--bat-green), #a8ff78);
+    transition: width 1s, background 1s;
+    animation: bat-shimmer 3s linear infinite;
+  }
+  @keyframes bat-shimmer {
+    0%   { filter: brightness(1); }
+    50%  { filter: brightness(1.2); }
+    100% { filter: brightness(1); }
+  }
+  .battery-pct {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .85rem;
+    color: var(--bat-green);
+    min-width: 38px;
+    text-align: right;
+  }
+  .battery-detail {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .65rem;
+    color: var(--text-dim);
+    display: flex; justify-content: space-between;
+  }
+
+  /* specs list */
+  .spec-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .spec-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .spec-key {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .62rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+  .spec-val {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .68rem;
+    color: var(--accent);
+  }
+
+  /* voice/log card */
+  .log-card {}
+
+  .voice-indicator {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(0,0,0,.3);
+    border: 1px solid var(--border);
+  }
+  .voice-bars {
+    display: flex; align-items: flex-end; gap: 3px;
+    height: 20px;
+  }
+  .voice-bars span {
+    display: block;
+    width: 4px;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: height .1s;
+  }
+  .voice-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .65rem;
+    color: var(--text-dim);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .voice-text.speaking { color: var(--accent); }
+
+  .event-log {
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 170px;
+    overflow-y: auto;
+  }
+  .event-log::-webkit-scrollbar { width: 4px; }
+  .event-log::-webkit-scrollbar-track { background: transparent; }
+  .event-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-entry {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 7px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,.025);
+    border-left: 3px solid transparent;
+    animation: log-in .3s ease;
+  }
+  @keyframes log-in {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .log-entry .log-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .6rem;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .log-entry .log-msg {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .63rem;
+    color: var(--text-main);
+    line-height: 1.4;
+  }
+
+  .log-fire    { border-color: var(--fire); }
+  .log-gas     { border-color: var(--gas); }
+  .log-quake   { border-color: var(--quake); }
+  .log-tsunami { border-color: var(--tsunami); }
+  .log-shooter { border-color: var(--shooter); }
+  .log-reset   { border-color: var(--text-dim); }
+
+  /* ─── Footer ─────────────────────────────────────────────────── */
+  footer {
+    margin-top: 28px;
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .6rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    border-top: 1px solid var(--border);
+    padding-top: 18px;
+  }
+
+  /* ─── Overlay alarm flash ─────────────────────────────────────── */
+  #alarm-overlay {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  #alarm-overlay.active { animation: overlay-flash 1s steps(1) infinite; }
+  @keyframes overlay-flash {
+    0%   { opacity: .07; }
+    50%  { opacity: 0; }
+    100% { opacity: .07; }
+  }
+</style>
+</head>
+<body>
+
+<div id="alarm-overlay"></div>
+
+<div class="app">
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="logo-block">
+      <div class="logo-icon">🛡️</div>
+      <div class="logo-text">
+        <h1>SAFE ALERT</h1>
+        <p>SISTEMA DE ALARMA ESCOLAR · PROTOTIPO STEM - SRA. MORALES FELIBERTY v1.0</p>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      <span>SISTEMA OPERATIVO · PANEL SOLAR ACTIVO</span>
+    </div>
+  </header>
+
+  <div class="main-grid">
+
+    <!-- ── Left column ── -->
+    <div>
+
+      <!-- Alert display -->
+      <div class="card">
+        <div class="card-title">Indicador de Emergencia</div>
+
+        <div id="alert-display" class="alert-display">
+          <div class="alert-icon" id="alert-icon">🟢</div>
+          <div class="alert-label" id="alert-label">SISTEMA EN ESPERA</div>
+          <div class="alert-sublabel" id="alert-sub">Ninguna emergencia activa · Presiona un botón para simular</div>
+        </div>
+        <div class="alert-band b-idle" id="alert-band"></div>
+
+        <!-- Emergency buttons -->
+        <div class="card-title" style="margin-top:22px">Panel de Control de Emergencias</div>
+        <div class="btn-grid" id="btn-grid">
+
+          <button class="btn-emergency btn-fire" data-key="fire" onclick="triggerAlert('fire', this)">
+            <span class="btn-icon">🔥</span>
+            <span>INCENDIO</span>
+            <span class="btn-color-tag">● ROJO</span>
+          </button>
+
+          <button class="btn-emergency btn-gas" data-key="gas" onclick="triggerAlert('gas', this)">
+            <span class="btn-icon">⚠️♨💨</span>
+            <span>GASES</span>
+            <span class="btn-color-tag">● AMARILLO</span>
+          </button>
+
+          <button class="btn-emergency btn-quake" data-key="quake" onclick="triggerAlert('quake', this)">
+            <span class="btn-icon">⚠️♒</span>
+            <span>TERREMOTO</span>
+            <span class="btn-color-tag">● BLANCO</span>
+          </button>
+
+          <button class="btn-emergency btn-tsunami" data-key="tsunami" onclick="triggerAlert('tsunami', this)">
+            <span class="btn-icon">🌊</span>
+            <span>TSUNAMI</span>
+            <span class="btn-color-tag">● AZUL</span>
+          </button>
+
+          <button class="btn-emergency btn-shooter" data-key="shooter" onclick="triggerAlert('shooter', this)">
+            <span class="btn-icon">🔫</span>
+            <span>TIRADOR ACTIVO</span>
+            <span class="btn-color-tag">● VIOLETA</span>
+          </button>
+
+        </div>
+
+        <button class="btn-reset" onclick="resetAll()">⏹ &nbsp;DETENER TODAS LAS ALARMAS</button>
+      </div>
+
+    </div>
+
+    <!-- ── Right sidebar ── -->
+    <div class="sidebar">
+
+      <!-- Energy panel -->
+      <div class="card energy-card">
+        <div class="card-title">Estado de Energía</div>
+
+        <div class="solar-row">
+          <div class="solar-label">
+            <span class="solar-icon">☀️</span>
+            Alimentado por Panel Solar
+          </div>
+          <div class="solar-val" id="solar-watt">18.4 W</div>
+        </div>
+
+        <div class="battery-wrap">
+          <div class="battery-body">
+            <div class="battery-fill" id="bat-fill"></div>
+          </div>
+          <div class="battery-pct" id="bat-pct">82%</div>
+        </div>
+
+        <div class="battery-detail">
+          <span>Batería 12V / 7Ah</span>
+          <span id="bat-v">12.1 V</span>
+        </div>
+
+        <div class="spec-list">
+          <div class="spec-row">
+            <span class="spec-key">PANEL SOLAR</span>
+            <span class="spec-val">20W · 18V</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">CONTROLADOR</span>
+            <span class="spec-val">PWM 5A</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">MICROCONTROLADOR</span>
+            <span class="spec-val">ARDUINO UNO</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">ALTAVOZ</span>
+            <span class="spec-val">3W · 8Ω</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">LED ARRAY</span>
+            <span class="spec-val">RGB × 5 ZONAS</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">COBERTURA</span>
+            <span class="spec-val">≈ 30m RADIO</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log / voice card -->
+      <div class="card log-card">
+        <div class="card-title">Audio & Registro de Eventos</div>
+
+        <div class="voice-indicator">
+          <div class="voice-bars" id="voice-bars">
+            <span style="height:4px" id="vb1"></span>
+            <span style="height:8px" id="vb2"></span>
+            <span style="height:14px" id="vb3"></span>
+            <span style="height:8px" id="vb4"></span>
+            <span style="height:4px" id="vb5"></span>
+          </div>
+          <div class="voice-text" id="voice-text">Sistema listo · Sin alarma activa</div>
+        </div>
+
+        <div class="event-log" id="event-log">
+          <div class="log-entry log-reset">
+            <span class="log-time" id="init-time"></span>
+            <span class="log-msg">Sistema SAFE Alert inicializado correctamente.</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /sidebar -->
+
+  </div><!-- /main-grid -->
+
+  <footer>
+    SAFE ALERT · Proyecto STEM - Sra. Morales Feliberty ·<br>
+    Simulador de prototipo del Sistema de Alarmas Escolar
+  </footer>
+
+</div><!-- /app -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   SAFE ALERT — JavaScript Engine
+   Simulates: sound generation, speech synthesis, visual states
+   ═══════════════════════════════════════════════════════════ */
+
+// ── Alert data ──────────────────────────────────────────────
+const ALERTS = {
+  fire: {
+    label:   'INCENDIO',
+    sub:     'Protocolo EVACUACIÓN activado',
+    icon:    '🔥',
+    state:   'state-fire',
+    band:    'b-fire',
+    logCls:  'log-fire',
+    overlay: '#ff3a1a',
+    voice:   '¡Alerta! ¡Incendio detectado! Evacúe el edificio de inmediato por las salidas de emergencia. Mantenga la calma.',
+    // tone params: [freq, type, pattern]
+    tone:    { freqs:[880,0,880,0],  dur:.18, type:'sawtooth' },
+  },
+  gas: {
+    label:   'FUGA DE GAS',
+    sub:     'Protocolo VENTILACIÓN activado',
+    icon:    '⚠️♨💨',
+    state:   'state-gas',
+    band:    'b-gas',
+    logCls:  'log-gas',
+    overlay: '#ffe520',
+    voice:   '¡Peligro! Se ha detectado fuga de gas tóxico. No encienda interruptores. Evacúe el edificio inmediatamente y aléjese del área.',
+    tone:    { freqs:[440,550,440,550], dur:.25, type:'sine' },
+  },
+  quake: {
+    label:   'TERREMOTO',
+    sub:     'Protocolo RESGUARDO activado',
+    icon:    '⚠️♒',
+    state:   'state-quake',
+    band:    'b-quake',
+    logCls:  'log-quake',
+    overlay: '#cccccc',
+    voice:   '¡Sismo! Cúbrase debajo de un escritorio o mesa. Aléjese de ventanas. No salga hasta que cese el temblor. Agáchese, cúbrase y sujétese.',
+    tone:    { freqs:[200,150,200,150], dur:.3,  type:'square' },
+  },
+  tsunami: {
+    label:   'TSUNAMI',
+    sub:     'Protocolo ZONA ALTA activado',
+    icon:    '🌊',
+    state:   'state-tsunami',
+    band:    'b-tsunami',
+    logCls:  'log-tsunami',
+    overlay: '#0077ff',
+    voice:   '¡Alerta de Tsunami! Evacúe inmediatamente hacia zonas altas. No regrese hasta que las autoridades lo indiquen. Suba a terrenos elevados.',
+    tone:    { freqs:[330,0,660,0],   dur:.22, type:'triangle' },
+  },
+  shooter: {
+    label:   'TIRADOR ACTIVO',
+    sub:     'Protocolo LOCKDOWN activado',
+    icon:    '🔫',
+    state:   'state-shooter',
+    band:    'b-shooter',
+    logCls:  'log-shooter',
+    overlay: '#9b1aff',
+    voice:   '¡Código plata! Tirador activo en el edificio. Cierre puertas con seguro. Aléjese de ventanas. Permanezca en silencio. Espere instrucciones de las autoridades.',
+    tone:    { freqs:[1200,800,1200,800], dur:.15, type:'sawtooth' },
+  },
+};
+
+// ── State ────────────────────────────────────────────────────
+let audioCtx = null;
+let alarmInterval = null;
+let voiceAnim = null;
+let currentKey = null;
+let speechUtterance = null;
+
+// ── Audio context (lazy) ─────────────────────────────────────
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+// Plays a short beep tone
+function playBeep(freq, dur, type, vol=0.3) {
+  if (!freq) return;
+  const ctx = getCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  gain.gain.setValueAtTime(vol, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + dur);
+}
+
+// Repeating alarm pattern
+function startAlarmSound(key) {
+  const cfg = ALERTS[key].tone;
+  let step = 0;
+  alarmInterval = setInterval(() => {
+    playBeep(cfg.freqs[step % cfg.freqs.length], cfg.dur, cfg.type, 0.28);
+    step++;
+  }, cfg.dur * 1000 + 40);
+}
+
+function stopAlarmSound() {
+  clearInterval(alarmInterval);
+  alarmInterval = null;
+}
+
+// ── Speech synthesis ─────────────────────────────────────────
+function speak(text, key) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+
+  speechUtterance = new SpeechSynthesisUtterance(text);
+  speechUtterance.lang = 'es-ES';
+  speechUtterance.rate = 0.92;
+  speechUtterance.pitch = 1.05;
+  speechUtterance.volume = 1;
+
+  const vtxt = document.getElementById('voice-text');
+  vtxt.textContent = '🔊 ' + text;
+  vtxt.classList.add('speaking');
+
+  speechUtterance.onend = () => {
+    vtxt.classList.remove('speaking');
+    if (currentKey) vtxt.textContent = '🔊 Reproduciendo en bucle...';
+    else            vtxt.textContent = 'Sistema listo · Sin alarma activa';
+    // Repeat voice every 12 s while alarm is on
+    if (currentKey === key) {
+      setTimeout(() => { if (currentKey === key) speak(text, key); }, 12000);
+    }
+  };
+  window.speechSynthesis.speak(speechUtterance);
+}
+
+function stopSpeech() {
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  const vtxt = document.getElementById('voice-text');
+  vtxt.textContent = 'Sistema listo · Sin alarma activa';
+  vtxt.classList.remove('speaking');
+}
+
+// ── Visual state ─────────────────────────────────────────────
+function setVisual(key) {
+  const disp  = document.getElementById('alert-display');
+  const icon  = document.getElementById('alert-icon');
+  const label = document.getElementById('alert-label');
+  const sub   = document.getElementById('alert-sub');
+  const band  = document.getElementById('alert-band');
+  const overlay = document.getElementById('alarm-overlay');
+
+  // Remove all state classes
+  disp.className = 'alert-display';
+  band.className  = 'alert-band';
+
+  if (!key) {
+    icon.textContent  = '🟢';
+    label.textContent = 'SISTEMA EN ESPERA';
+    sub.textContent   = 'Ninguna emergencia activa · Presiona un botón para simular';
+    band.classList.add('b-idle');
+    overlay.style.background = 'transparent';
+    overlay.classList.remove('active');
+    return;
+  }
+
+  const a = ALERTS[key];
+  disp.classList.add('active', a.state);
+  band.classList.add(a.band);
+  icon.textContent  = a.icon;
+  label.textContent = a.label;
+  sub.textContent   = a.sub;
+  overlay.style.background = a.overlay;
+  overlay.classList.add('active');
+}
+
+// ── Voice bar animation ───────────────────────────────────────
+function animateBars(active) {
+  const ids = ['vb1','vb2','vb3','vb4','vb5'];
+  clearInterval(voiceAnim);
+  if (!active) {
+    ids.forEach((id,i) => {
+      const h = [4,8,14,8,4][i];
+      document.getElementById(id).style.height = h + 'px';
+    });
+    return;
+  }
+  voiceAnim = setInterval(() => {
+    ids.forEach(id => {
+      const h = Math.floor(Math.random() * 18) + 3;
+      document.getElementById(id).style.height = h + 'px';
+    });
+  }, 120);
+}
+
+// ── Event log ─────────────────────────────────────────────────
+function addLog(msg, cls) {
+  const log = document.getElementById('event-log');
+  const now = new Date();
+  const ts  = now.toLocaleTimeString('es-PR', {hour12: false});
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${cls}`;
+  entry.innerHTML = `<span class="log-time">${ts}</span><span class="log-msg">${msg}</span>`;
+  log.prepend(entry);
+  // Keep max 30 entries
+  while (log.children.length > 30) log.removeChild(log.lastChild);
+}
+
+// ── Ripple on button ─────────────────────────────────────────
+function addRipple(btn, e) {
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+}
+
+// ── Main trigger ──────────────────────────────────────────────
+function triggerAlert(key, btnEl) {
+  // Reset previous
+  resetAll(true);
+
+  currentKey = key;
+  const a = ALERTS[key];
+
+  // Visual
+  setVisual(key);
+
+  // Ripple
+  if (btnEl && event) addRipple(btnEl, event);
+
+  // Mark active button
+  document.querySelectorAll('.btn-emergency').forEach(b => b.classList.remove('active-btn'));
+  if (btnEl) btnEl.classList.add('active-btn');
+
+  // Sound
+  startAlarmSound(key);
+
+  // Speech
+  speak(a.voice, key);
+
+  // Bar animation
+  animateBars(true);
+
+  // Log
+  addLog(`🚨 ALARMA ACTIVADA: ${a.label} — ${a.sub}`, a.logCls);
+  addLog(`🔊 Mensaje de voz: "${a.voice.substring(0,60)}…"`, a.logCls);
+}
+
+// ── Reset ─────────────────────────────────────────────────────
+function resetAll(silent=false) {
+  currentKey = null;
+  stopAlarmSound();
+  stopSpeech();
+  setVisual(null);
+  animateBars(false);
+  document.querySelectorAll('.btn-emergency').forEach(b => b.classList.remove('active-btn'));
+  if (!silent) addLog('⏹ Sistema reiniciado. Todas las alarmas detenidas.', 'log-reset');
+}
+
+// ── Battery simulation ────────────────────────────────────────
+(function batteryLoop() {
+  let pct = 82;
+  let charging = true;
+  const fill = document.getElementById('bat-fill');
+  const pctEl = document.getElementById('bat-pct');
+  const vEl   = document.getElementById('bat-v');
+  const wEl   = document.getElementById('solar-watt');
+
+  setInterval(() => {
+    // Slight fluctuation
+    if (charging) {
+      pct = Math.min(100, pct + (Math.random() * .3));
+      if (pct >= 100) charging = false;
+    } else {
+      pct = Math.max(60, pct - (Math.random() * .1));
+      if (pct <= 60) charging = true;
+    }
+
+    const p = Math.round(pct);
+    fill.style.width = p + '%';
+    pctEl.textContent = p + '%';
+
+    // Battery colour by level
+    if (p > 50) {
+      fill.style.background = 'linear-gradient(90deg, #29dd4a, #a8ff78)';
+      pctEl.style.color = '#29dd4a';
+    } else if (p > 25) {
+      fill.style.background = 'linear-gradient(90deg, #ffa500, #ffdd57)';
+      pctEl.style.color = '#ffa500';
+    } else {
+      fill.style.background = 'linear-gradient(90deg, #ff3a1a, #ff7a50)';
+      pctEl.style.color = '#ff3a1a';
+    }
+
+    // Voltage map 11.5–12.7V
+    const v = (11.5 + (pct/100) * 1.2).toFixed(1);
+    vEl.textContent = v + ' V';
+
+    // Solar wattage slight randomness
+    const w = (17.5 + Math.random() * 2).toFixed(1);
+    wEl.textContent = w + ' W';
+
+  }, 2000);
+})();
+
+// ── Set init log timestamp ────────────────────────────────────
+document.getElementById('init-time').textContent =
+  new Date().toLocaleTimeString('es-PR', {hour12:false});
+
+</script>
+</body>
+</html>
